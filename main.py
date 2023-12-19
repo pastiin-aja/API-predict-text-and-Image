@@ -1,6 +1,6 @@
 import os
-import tensorflow as tf
 import pickle
+import tensorflow as tf
 import requests
 from pydantic import BaseModel
 from fastapi import FastAPI, Response, UploadFile,  HTTPException
