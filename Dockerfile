@@ -1,10 +1,9 @@
-FROM python:3.10.3-alpine
+FROM python:3.10.3-slim-buster
 
 WORKDIR /workspace
 
 COPY requirements.txt requirements.txt
 
-RUN apk --no-cache add build-base
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
