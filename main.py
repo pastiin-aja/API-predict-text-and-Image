@@ -79,8 +79,8 @@ async def extract_and_predict(data: InputImageData):
 
 if __name__=="__main__":
     import uvicorn
-    uvicorn.run(app, host=os.getenv("HOST", "0.0.0.0"),port=int(os.getenv("PORT",8080)),
-    log_level="debug")
+
+    uvicorn.run(app, host='0.0.0.0', port=8080)
 
 ## to run the fastapi without docker :
 ## python -m uvicorn main:app --reload
