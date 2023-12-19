@@ -1,6 +1,7 @@
 import os
 import tensorflow as tf
 import pickle
+import requests
 from pydantic import BaseModel
 from fastapi import FastAPI, Response, UploadFile,  HTTPException
 from easyocr import Reader
@@ -13,8 +14,11 @@ loaded_vectorizer = pickle.load(open('./vectorizer.pickle', 'rb'))
 # You can load .h5 model or any model below this line
 model = tf.keras.models.load_model('./model_fraud_v1.h5')
 
-class InputData(BaseModel):
-    st: str
+class InputTextData(BaseModel):
+    text: str
+
+class InputImageData(BaseModel):
+    url: str
 
 class PredictionResult(BaseModel):
     text: str
@@ -33,28 +37,30 @@ app = FastAPI()
 def index():
     return {"msg": "mainpage"}
 
-@app.post("/predict_text")
-def predictor(data: InputData):
+@app.post("/text_predict")
+def predictor(data: InputTextData):
     # Vectorize the input text
-    text_vectorized = loaded_vectorizer.transform([data.st])
+    text_vectorized = loaded_vectorizer.transform([data.text])
 
     result = model_predict(text_vectorized)
     return {"msg": result.tolist()}  # Convert predictions to a list
 
-@app.post("/extract_and_predict", response_model=PredictionResult)
-async def extract_and_predict(data: UploadFile):
+@app.post("/image_predict", response_model=PredictionResult)
+async def extract_and_predict(data: InputImageData):
     try:
-        # Checking if it's an image
-        if data.content_type not in ["image/jpeg", "image/png"]:
-            return Response(content="File is Not an Image", status_code=400)
+        response = requests.get(data.url)
+        if response.status_code != 200:
+            raise HTTPException(status_code=400, detail="Failed to download image from the provided URL")
 
-        # Save the uploaded file
-        with open(data.filename, "wb") as image_file:
-            image_file.write(data.file.read())
+        # Checking if it's an image
+        # content_type = response.headers.get("content-type", "")
+        # if content_type not in ["image/jpeg", "image/png"]:
+        #     return Response(content="File is Not an Image", status_code=400)
 
         # Use EasyOCR to extract text from the image
         reader = Reader(['en', 'id'])  # You can add more languages if needed
-        result = reader.readtext(data.filename)
+        image_bytes = response.content
+        result = reader.readtext(image_bytes)
 
         # Extract text from the result
         text = " ".join([item[1] for item in result])
@@ -68,7 +74,7 @@ async def extract_and_predict(data: UploadFile):
         return {"text": text, "prediction": float(prediction)}
     except Exception as e:
         # Handle exceptions gracefully
-        return Response(content=f"An error occurred: {str(e)}", status_code=500)
+         raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")
 
 
 if __name__=="__main__":
