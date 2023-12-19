@@ -4,7 +4,7 @@ WORKDIR /workspace
 
 COPY requirements.txt requirements.txt
 
-RUN apk --no- add build-base
+RUN apk --no-cache add build-base
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
