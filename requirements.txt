@@ -5,3 +5,4 @@ python-multipart
 numpy
 tensorflow
 scikit-learn
+requests
